@@ -1,0 +1,10 @@
+[package]
+name = "gdb-agent"
+version = "0.1.0"
+authors = ["Kyle Huey <khuey@kylehuey.com>"]
+
+[dependencies]
+byteorder = "1.1.0"
+enum_index = { git = "https://github.com/khuey/enum_index", branch = "enum-discr" }
+enum_index_derive = { git = "https://github.com/khuey/enum_index", branch = "enum-discr" }
+error-chain = "0.10.0"
