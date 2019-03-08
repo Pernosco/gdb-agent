@@ -1,6 +1,6 @@
 [package]
 name = "gdb-agent"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kyle Huey <khuey@kylehuey.com>"]
 license = "Apache-2.0/MIT"
 repository = "https://github.com/khuey/lazy-init"
