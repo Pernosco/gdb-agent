@@ -176,7 +176,8 @@ impl<'bytecode> StateMachine<'bytecode> {
 
     /// Fetch a value of the specified size from the bytecode stream.
     fn fetch<T>(&mut self) -> io::Result<T>
-        where T: ReadBigEndian
+    where
+        T: ReadBigEndian,
     {
         match T::read_big_endian(&mut self.bytecode) {
             Ok(t) => Ok(t),
@@ -197,7 +198,8 @@ impl<'bytecode> StateMachine<'bytecode> {
     /// push it on the stack.
     fn pick(&mut self, i: usize, o: Opcode, pos: u64) -> Result<()> {
         let stack_length = self.stack.len();
-        let index = stack_length.checked_sub(1 + i)
+        let index = stack_length
+            .checked_sub(1 + i)
             .ok_or_else::<Error, _>(|| ErrorKind::PickIndexOutOfRange(o, pos, i).into())?;
         let v = self.stack.get(index).unwrap().clone();
         self.push(v)
@@ -425,23 +427,20 @@ impl<'bytecode> StateMachine<'bytecode> {
     }
 }
 
-fn evaluate_internal<'bytecode>(mut state: StateMachine<'bytecode>)
-                                -> Result<AgentExpressionResult<'bytecode>> {
+fn evaluate_internal<'bytecode>(
+    mut state: StateMachine<'bytecode>,
+) -> Result<AgentExpressionResult<'bytecode>> {
     Ok(match state.evaluate()? {
         State::Complete(v) => AgentExpressionResult::Complete(v),
-        State::NeedsRegister(r) => {
-            AgentExpressionResult::NeedsRegister {
-                register: r,
-                expression: AgentExpressionNeedsRegister { state: state },
-            }
-        }
-        State::NeedsMemory { address, size } => {
-            AgentExpressionResult::NeedsMemory {
-                address: address,
-                size: size,
-                expression: AgentExpressionNeedsMemory { state: state },
-            }
-        }
+        State::NeedsRegister(r) => AgentExpressionResult::NeedsRegister {
+            register: r,
+            expression: AgentExpressionNeedsRegister { state: state },
+        },
+        State::NeedsMemory { address, size } => AgentExpressionResult::NeedsMemory {
+            address: address,
+            size: size,
+            expression: AgentExpressionNeedsMemory { state: state },
+        },
         State::Continue => unreachable!(),
     })
 }
@@ -461,9 +460,10 @@ pub struct AgentExpressionNeedsRegister<'bytecode> {
 
 impl<'bytecode> AgentExpressionNeedsRegister<'bytecode> {
     /// Resume the evaluation with the provided `register_value`.
-    pub fn resume_with_register(self,
-                                register_value: Value)
-                                -> Result<AgentExpressionResult<'bytecode>> {
+    pub fn resume_with_register(
+        self,
+        register_value: Value,
+    ) -> Result<AgentExpressionResult<'bytecode>> {
         let mut state = self.state;
         state.push(register_value).unwrap();
         evaluate_internal(state)
@@ -478,9 +478,10 @@ pub struct AgentExpressionNeedsMemory<'bytecode> {
 
 impl<'bytecode> AgentExpressionNeedsMemory<'bytecode> {
     /// Resume the evaluation with the provided `memory_value`.
-    pub fn resume_with_memory(self,
-                              memory_value: Value)
-                              -> Result<AgentExpressionResult<'bytecode>> {
+    pub fn resume_with_memory(
+        self,
+        memory_value: Value,
+    ) -> Result<AgentExpressionResult<'bytecode>> {
         let mut state = self.state;
         state.push(memory_value).unwrap();
         evaluate_internal(state)
@@ -516,10 +517,10 @@ impl<'bytecode> AgentExpressionResult<'bytecode> {
     /// Unwrap the result, panicking if it is not `Complete`.
     pub fn unwrap(self) -> Value {
         match self {
-            AgentExpressionResult::NeedsRegister { .. } |
-            AgentExpressionResult::NeedsMemory { .. } => {
+            AgentExpressionResult::NeedsRegister { .. }
+            | AgentExpressionResult::NeedsMemory { .. } => {
                 panic!(".unwrap() called, but agent expression evaluation is not complete!")
-            },
+            }
             AgentExpressionResult::Complete(v) => v,
         }
     }
@@ -534,9 +535,7 @@ fn test_end() {
 
 #[test]
 fn test_const8() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x80,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8, 0x80, Opcode::OpEnd as u8];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -545,9 +544,7 @@ fn test_const8() {
 
 #[test]
 fn test_const16() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst16 as u8,
-                                 0x80, 0x80,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![Opcode::OpConst16 as u8, 0x80, 0x80, Opcode::OpEnd as u8];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -556,9 +553,14 @@ fn test_const16() {
 
 #[test]
 fn test_const32() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst32 as u8,
-                                 0xde, 0xad, 0xbe, 0xef,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst32 as u8,
+        0xde,
+        0xad,
+        0xbe,
+        0xef,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -567,9 +569,18 @@ fn test_const32() {
 
 #[test]
 fn test_const64() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst64 as u8,
-                                 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst64 as u8,
+        0x5a,
+        0x5a,
+        0x5a,
+        0x5a,
+        0x5a,
+        0x5a,
+        0x5a,
+        0x5a,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -578,12 +589,14 @@ fn test_const64() {
 
 #[test]
 fn test_add() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x80,
-                                 Opcode::OpConst8 as u8,
-                                 0x80,
-                                 Opcode::OpAdd as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        0x80,
+        Opcode::OpConst8 as u8,
+        0x80,
+        Opcode::OpAdd as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -592,12 +605,21 @@ fn test_add() {
 
 #[test]
 fn test_add_ovf() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x0,
-                                 Opcode::OpConst64 as u8,
-                                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                 Opcode::OpAdd as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        0x0,
+        Opcode::OpConst64 as u8,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        Opcode::OpAdd as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -606,12 +628,14 @@ fn test_add_ovf() {
 
 #[test]
 fn test_sub() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x80,
-                                 Opcode::OpConst8 as u8,
-                                 0x7f,
-                                 Opcode::OpSub as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        0x80,
+        Opcode::OpConst8 as u8,
+        0x7f,
+        Opcode::OpSub as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -620,12 +644,21 @@ fn test_sub() {
 
 #[test]
 fn test_sub_ovf() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x0,
-                                 Opcode::OpConst64 as u8,
-                                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                 Opcode::OpSub as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        0x0,
+        Opcode::OpConst64 as u8,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        Opcode::OpSub as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -634,12 +667,14 @@ fn test_sub_ovf() {
 
 #[test]
 fn test_mul() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 3,
-                                 Opcode::OpConst8 as u8,
-                                 8,
-                                 Opcode::OpMul as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        3,
+        Opcode::OpConst8 as u8,
+        8,
+        Opcode::OpMul as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -648,12 +683,14 @@ fn test_mul() {
 
 #[test]
 fn test_lsh() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 3,
-                                 Opcode::OpConst8 as u8,
-                                 3,
-                                 Opcode::OpLsh as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        3,
+        Opcode::OpConst8 as u8,
+        3,
+        Opcode::OpLsh as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -662,12 +699,14 @@ fn test_lsh() {
 
 #[test]
 fn test_rsh_unsigned() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 24,
-                                 Opcode::OpConst8 as u8,
-                                 3,
-                                 Opcode::OpRshUnsigned as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        24,
+        Opcode::OpConst8 as u8,
+        3,
+        Opcode::OpRshUnsigned as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -676,11 +715,13 @@ fn test_rsh_unsigned() {
 
 #[test]
 fn test_ext() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 0x8,
-                                 Opcode::OpExt as u8,
-                                 0x4,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        0x8,
+        Opcode::OpExt as u8,
+        0x4,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -689,14 +730,16 @@ fn test_ext() {
 
 #[test]
 fn test_rsh_signed() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst8 as u8,
-                                 8,
-                                 Opcode::OpExt as u8,
-                                 4,
-                                 Opcode::OpConst8 as u8,
-                                 1,
-                                 Opcode::OpRshSigned as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst8 as u8,
+        8,
+        Opcode::OpExt as u8,
+        4,
+        Opcode::OpConst8 as u8,
+        1,
+        Opcode::OpRshSigned as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
@@ -705,17 +748,18 @@ fn test_rsh_signed() {
 
 #[test]
 fn test_reg() {
-    let bytecode: Vec<u8> = vec![Opcode::OpReg as u8,
-                                 0, 16,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![Opcode::OpReg as u8, 0, 16, Opcode::OpEnd as u8];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
     let result = match result {
-        AgentExpressionResult::NeedsRegister { register, expression } => {
+        AgentExpressionResult::NeedsRegister {
+            register,
+            expression,
+        } => {
             assert_eq!(register, 16);
             expression.resume_with_register(Value(512))
-        },
+        }
         _ => panic!(),
     };
     let result = result.unwrap();
@@ -724,19 +768,28 @@ fn test_reg() {
 
 #[test]
 fn test_mem() {
-    let bytecode: Vec<u8> = vec![Opcode::OpConst32 as u8,
-                                 0xde, 0xad, 0xbe, 0xef,
-                                 Opcode::OpRef32 as u8,
-                                 Opcode::OpEnd as u8];
+    let bytecode: Vec<u8> = vec![
+        Opcode::OpConst32 as u8,
+        0xde,
+        0xad,
+        0xbe,
+        0xef,
+        Opcode::OpRef32 as u8,
+        Opcode::OpEnd as u8,
+    ];
     let result = evaluate(&bytecode);
     assert!(result.is_ok());
     let result = result.unwrap();
     let result = match result {
-        AgentExpressionResult::NeedsMemory { address, size, expression } => {
+        AgentExpressionResult::NeedsMemory {
+            address,
+            size,
+            expression,
+        } => {
             assert_eq!(address, Value(0xdeadbeef));
             assert_eq!(size, 4);
             expression.resume_with_memory(Value(512))
-        },
+        }
         _ => panic!(),
     };
     let result = result.unwrap();
