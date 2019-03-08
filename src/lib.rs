@@ -12,30 +12,37 @@ use std::io::{self, Cursor, Read};
 use byteorder::{BigEndian, ReadBytesExt};
 use enum_index::IndexEnum;
 
-error_chain! {
-    foreign_links {
-        Io(::std::io::Error);
-    }
+#[allow(deprecated)]
+mod error {
+    use super::*;
 
-    errors {
-        DivideByZero(o: Opcode, pos: u64) {
-            description("Division by zero")
-            display("Evaluating the opcode {:?} at {} resulted in a division by zero", o, pos)
+    error_chain! {
+        foreign_links {
+            Io(::std::io::Error);
         }
-        NoValueOnStack(o: Opcode, pos: u64) {
-            description("Evaluation stack is empty")
-            display("There is no value on the evaluation stack to use when evaluating opcode {:?} at {}", o, pos)
-        }
-        PickIndexOutOfRange(o: Opcode, pos: u64, index: usize) {
-            description("Pick index is out of range")
-            display("The index {} is not a valid index for the evaluation stack when evaluating opcode {:?} at {}", index, o, pos)
-        }
-        UnrecognizedOpcode(o: u8, pos: u64) {
-            description("Unrecognized opcode")
-            display("Opcode value '{}' is unknown at {}", o, pos)
+
+        errors {
+            DivideByZero(o: Opcode, pos: u64) {
+                description("Division by zero")
+                    display("Evaluating the opcode {:?} at {} resulted in a division by zero", o, pos)
+            }
+            NoValueOnStack(o: Opcode, pos: u64) {
+                description("Evaluation stack is empty")
+                    display("There is no value on the evaluation stack to use when evaluating opcode {:?} at {}", o, pos)
+            }
+            PickIndexOutOfRange(o: Opcode, pos: u64, index: usize) {
+                description("Pick index is out of range")
+                    display("The index {} is not a valid index for the evaluation stack when evaluating opcode {:?} at {}", index, o, pos)
+            }
+            UnrecognizedOpcode(o: u8, pos: u64) {
+                description("Unrecognized opcode")
+                    display("Opcode value '{}' is unknown at {}", o, pos)
+            }
         }
     }
 }
+
+pub use error::*;
 
 trait ReadBigEndian: Sized {
     fn read_big_endian<R: Read>(r: &mut R) -> io::Result<Self>;
