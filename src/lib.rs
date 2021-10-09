@@ -1,16 +1,10 @@
 #![deny(missing_debug_implementations)]
-
-extern crate byteorder;
-extern crate enum_index;
-#[macro_use]
-extern crate enum_index_derive;
-#[macro_use]
-extern crate error_chain;
-
+use std::convert::TryFrom;
 use std::io::{self, Cursor, Read};
 
 use byteorder::{BigEndian, ReadBytesExt};
-use enum_index::IndexEnum;
+use error_chain::*;
+use num_enum::TryFromPrimitive;
 
 #[allow(deprecated)]
 mod error {
@@ -77,7 +71,8 @@ impl ReadBigEndian for u64 {
 pub struct Value(pub i64);
 
 /// A gdb agent expression opcode.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, IndexEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive)]
+#[repr(u8)]
 pub enum Opcode {
     OpFloat = 0x01,
     OpAdd = 0x02,
@@ -218,8 +213,8 @@ impl<'bytecode> StateMachine<'bytecode> {
         let pos = self.bytecode.position();
         let op = {
             let op_value: u8 = self.fetch()?;
-            Opcode::index_enum(op_value as usize)
-                .ok_or_else::<Error, _>(|| ErrorKind::UnrecognizedOpcode(op_value, pos).into())?
+            Opcode::try_from(op_value)
+                .map_err::<Error, _>(|_| ErrorKind::UnrecognizedOpcode(op_value, pos).into())?
         };
 
         match op {

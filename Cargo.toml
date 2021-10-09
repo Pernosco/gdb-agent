@@ -1,6 +1,7 @@
 [package]
 name = "gdb-agent"
-version = "0.1.1"
+version = "0.1.2"
+edition = "2018"
 authors = ["Kyle Huey <khuey@kylehuey.com>"]
 license = "Apache-2.0/MIT"
 repository = "https://github.com/khuey/gdb-agent"
@@ -9,6 +10,5 @@ keywords = ["gdb", "debugger"]
 
 [dependencies]
 byteorder = "1.1.0"
-enum_index = { git = "https://github.com/khuey/enum_index", branch = "enum-discr" }
-enum_index_derive = { git = "https://github.com/khuey/enum_index", branch = "enum-discr" }
 error-chain = "0.12"
+num_enum = "0.5"
