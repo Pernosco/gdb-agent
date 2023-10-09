@@ -11,4 +11,4 @@ keywords = ["gdb", "debugger"]
 [dependencies]
 byteorder = "1.1.0"
 error-chain = "0.12"
-num_enum = "0.5"
+num_enum = "0.7"
